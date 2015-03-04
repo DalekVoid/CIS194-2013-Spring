@@ -25,6 +25,17 @@ die = getRandom
 ------------------------------------------------------------
 -- Risk
 
+------------------------------------------------------------
+-- Battlefield
+-- 
+{-
+instance Random Battlefield where
+  random = first (\x y -> Battlefield x y) . (randomR (0, 5) :: Int)
+  randomR (low, high) = undefined -- first Battlefield . (randomR (low, high) :: Army)
+
+randomBattlefield :: Rand StdGen Battlefield
+randomBattlefield = getRandom
+-}
 type Army = Int
 
 data Battlefield = Battlefield { attackers :: Army, defenders :: Army }
@@ -51,12 +62,17 @@ printDice n = do
 diePair :: IO (DieValue, DieValue)
 diePair = liftM2 (,) (evalRandIO die) (evalRandIO die)
 
--- randomBattlefield :: Rand StdGen Battlefield
--- randomBattlefield = liftM2 Battlefield (evalRandIO die) (evalRandIO die)
+data BattleResult = Victory | Defeat
+  deriving (Eq)
+
+battleResult :: Battlefield -> BattleResult
+battleResult bf@(Battlefield 1 _) = Defeat
+battleResult _                    = Victory
 
 mapTuple :: (a -> b) -> (a, a) -> (b, b)
 mapTuple f (x, y) = (f x, f y)
 
+{-
 battle :: Battlefield -> IO Battlefield
 battle bf@(Battlefield 0 _) = return bf
 battle bf@(Battlefield 1 _) = return bf
@@ -78,15 +94,35 @@ invade bf = do
               result <- battle bf
               invade result
 
-data BattleResult = Victory | Defeat
-  deriving (Eq)
-
-battleResult :: Battlefield -> BattleResult
-battleResult bf@(Battlefield 1 _) = Defeat
-battleResult _                    = Victory
-
 successProb :: Battlefield -> IO Double
 successProb bf = do
                   results <- replicateM 1000 (invade bf)
                   return $ fromIntegral (length . filter (==Victory) $ map battleResult results)/1000.0
+                  -}
 
+------------------------------------------------------------
+battle :: Battlefield -> Rand StdGen Battlefield
+battle bf@(Battlefield 0 _) = return bf
+battle bf@(Battlefield 1 _) = return bf
+battle bf@(Battlefield _ 0) = return bf
+battle (Battlefield attk def) =
+  do
+    attkValues <- dice (min 3 (attk-1))
+    defValues <- dice (min 2 def)
+    let result = mapTuple length $ partition (/=LT) $ zipWith compare (sort attkValues) (sort defValues)
+    return $ Battlefield (attk - fst result) (def - snd result)
+
+invade :: Battlefield -> Rand StdGen Battlefield
+invade bf@(Battlefield 0 _) = return bf
+invade bf@(Battlefield 1 _) = return bf
+invade bf@(Battlefield _ 0) = return bf
+-- invade bf = (battle bf) >>= \result ->
+--             invade result
+invade bf = do
+              result <- battle bf
+              invade result
+
+successProb :: Battlefield -> Rand StdGen Double
+successProb bf = do
+                  results <- replicateM 1000 (invade bf)
+                  return $ fromIntegral (length . filter (==Victory) $ map battleResult results)/1000.0
