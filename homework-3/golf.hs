@@ -37,10 +37,13 @@ test_localMaxima_3 = localMaxima [1,2,3,4,5] == []
 
 testCases = [test_localMaxima_1, test_localMaxima_2, test_localMaxima_3]
 
+appendTo :: [String] -> Integer -> [String]
+appendTo bars@(b:bs) i
+  | i == 1 = ("*" ++  b) : bs
+  | otherwise  = b : appendTo bs (i-1)
 
 bars :: [Integer] -> [String]
-bars list = map (flip (replicate) '*') $ [ length $ filter (==n) list | n <- [1..9]]
-
+bars = foldl' appendTo (replicate 9 [])
 
 spaceFilledBars :: [String] -> [String]
 spaceFilledBars bars = map (\bar -> replicate (maxLen - length bar) ' ' ++ bar) bars
