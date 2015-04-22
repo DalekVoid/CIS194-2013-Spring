@@ -5,6 +5,7 @@ module Risk where
 import Control.Monad.Random
 import Data.List
 import Control.Monad (replicateM, liftM2)
+import Control.Arrow (first)
 
 ------------------------------------------------------------
 -- Die values
@@ -12,8 +13,10 @@ import Control.Monad (replicateM, liftM2)
 newtype DieValue = DV { unDV :: Int }
   deriving (Eq, Ord, Show, Num)
 
+{-
 first :: (a -> b) -> (a, c) -> (b, c)
 first f (a, c) = (f a, c)
+-}
 
 instance Random DieValue where
   random           = first DV . randomR (1,6)

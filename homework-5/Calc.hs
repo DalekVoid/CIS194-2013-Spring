@@ -114,3 +114,10 @@ instance Expr (M.Map String Integer -> Maybe Integer) where
 
 withVars :: [(String, Integer)] -> (M.Map String Integer -> Maybe Integer) -> Maybe Integer
 withVars vs exp = exp $ M.fromList vs
+
+-- Alternative Solution:
+-- http://www.reddit.com/r/haskellquestions/comments/33darh/cis_194_homework_5_question_6_problems/cqjwhql
+
+-- making use of (->) env and Maybe being instances of Applicative
+-- we can use pure and liftA2 to implement lit, add and mul.
+-- Yes, pure of (->) env is just const.
