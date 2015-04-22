@@ -6,6 +6,7 @@ module Calc where
 import ExprT
 import Parser
 import qualified StackVM as S
+import qualified Data.Map as M
 
 {- Version 1 -}
 eval :: ExprT -> Integer
@@ -53,7 +54,7 @@ instance Expr MinMax where
 
 newtype Mod7 = Mod7 Integer deriving (Eq, Show)
 instance Expr Mod7 where
-  lit = Mod7 . (flip mod 7) 
+  lit = Mod7 . (flip mod 7)
   add (Mod7 addend) (Mod7 adder) = Mod7 ((addend + adder) `mod` 7)
   mul (Mod7 multiplicand) (Mod7 multiplier) = Mod7 ((multiplicand * multiplier) `mod` 7)
 
@@ -71,7 +72,7 @@ testExp = parseExp lit add mul "(3 * -4) + 5"
 
 testInteger = testExp :: Maybe Integer
 testBool    = testExp :: Maybe Bool
-testMM      = testExp :: Maybe MinMax 
+testMM      = testExp :: Maybe MinMax
 testSat     = testExp :: Maybe Mod7
 
 -- | Exercise 5
@@ -84,3 +85,32 @@ testProgram = testExp :: Maybe S.Program
 
 compile :: String -> Maybe S.Program
 compile = parseExp lit add mul
+
+-- | Exercise 6
+class HasVars a where
+  var :: String -> a
+
+data VarExprT = VLit Integer
+              | VAdd VarExprT VarExprT
+              | VMul VarExprT VarExprT
+              | Var String
+  deriving (Show, Eq)
+
+instance Expr VarExprT where
+  lit = VLit
+  add = VAdd
+  mul = VMul
+
+instance HasVars VarExprT where
+  var = Var
+
+instance HasVars (M.Map String Integer -> Maybe Integer) where
+  var = M.lookup
+
+instance Expr (M.Map String Integer -> Maybe Integer) where
+  lit i = const (Just i)
+  add e1 e2 = \dict -> (+) <$> e1 dict <*> e2 dict
+  mul e1 e2 = \dict -> (*) <$> e1 dict <*> e2 dict
+
+withVars :: [(String, Integer)] -> (M.Map String Integer -> Maybe Integer) -> Maybe Integer
+withVars vs exp = exp $ M.fromList vs
