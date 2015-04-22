@@ -23,6 +23,9 @@ letterScore = M.fromList (uppercaseScore ++ lowercaseScore)
 data Score = Score Int
   deriving (Show, Eq)
 
+getScore :: Score -> Int
+getScore (Score i) = i
+
 instance Monoid Score where
   mempty = Score 0
   (Score s1) `mappend` (Score s2) = Score (s1 + s2)
