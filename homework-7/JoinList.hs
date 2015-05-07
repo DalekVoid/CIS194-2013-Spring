@@ -65,8 +65,14 @@ instance Buffer (JoinList (Score, Size) String) where
   toString Empty = ""
   toString (Single _ str) = str
   toString (Append _ jl1 jl2) = toString jl1 ++ toString jl2
-  fromString str = foldr (+++) Empty . map fromString' . lines $ str
-    where fromString' ln = Single (scoreString ln, Size 1) ln
+--  fromString str = foldr (+++) Empty . map fromString' . lines $ str
+--    where fromString' ln = Single (scoreString ln, Size 1) ln
+  fromString = constructTree . lines
+    where
+      constructTree [  ] = Empty
+      constructTree [ln] = Single (scoreString ln, Size 1) ln
+      constructTree xs   = constructTree xs1 +++ constructTree xs2
+        where (xs1, xs2) = split xs
   line = indexJ
   numLines = sizeOf
   value = getScore . fst . tag
@@ -74,3 +80,10 @@ instance Buffer (JoinList (Score, Size) String) where
     where
       splitJoinList n jl = (takeJ n jl, dropJ (n+1) jl)
       (preceding, following) = splitJoinList n b
+
+-- Stable split
+-- Source: http://en.literateprograms.org/Merge_sort_%28Haskell%29
+split :: [a] -> ([a], [a])
+split xs = go xs xs where
+  go (x:xs) (_:_:zs) = (x:us, vs) where (us, vs) = go xs zs
+  go    xs   _       = ([], xs)
